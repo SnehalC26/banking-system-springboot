@@ -7,7 +7,9 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
+import com.fintech.banking_app.repository.UserRepository;
+import com.fintech.banking_app.entity.User;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.fintech.banking_app.dto.AccountDto;
 import com.fintech.banking_app.dto.TransactionDto;
 import com.fintech.banking_app.entity.Account;
@@ -25,25 +27,62 @@ import jakarta.transaction.Transactional;
 @Service //automcatically create spring bean for this class
 public class AccountServiceImpl implements AccountService{
 
-	
+	private UserRepository userRepository;
 	private AccountRepository accRepo;
 	private TransactionRepository transRepo;
 	// constructor based dependency injection to inject this accountrepository
-	@Autowired //but spring 4.3 onwards not required becoz when spring find a single constructor in a spring bean spring will automatically inject a spring injection
-	public AccountServiceImpl(AccountRepository accRepo, TransactionRepository transRepo) {
-		super();
-		this.accRepo = accRepo;
-		this.transRepo= transRepo;
+	@Autowired
+	public AccountServiceImpl(
+	        AccountRepository accRepo,
+	        TransactionRepository transRepo,
+	        UserRepository userRepository
+	){
+
+	    this.accRepo = accRepo;
+	    this.transRepo = transRepo;
+	    this.userRepository = userRepository;
+
 	}
 	
 	@Override
-	public AccountDto createAccount(AccountDto aDto) { // convert account dto into account jpa entity and then save account jpa entity into database
-		Account ac = AccountMapper.mapToAccount(aDto);
-		Account savedAccount = accRepo.save(ac);
-		
-		return AccountMapper.mapToAccountDto(savedAccount);
+	public AccountDto createAccount(AccountDto aDto, String email) {
+
+
+	    User user = userRepository.findByEmail(email)
+	            .orElseThrow(() ->
+	                    new AccountException("User not found")
+	            );
+
+
+	    Account account = AccountMapper.mapToAccount(aDto);
+
+
+	    account.setUser(user);
+
+
+	    Account savedAccount = accRepo.save(account);
+
+
+	    return AccountMapper.mapToAccountDto(savedAccount);
 	}
 
+	private User getLoggedInUser(){
+
+	    String email =
+	            SecurityContextHolder
+	            .getContext()
+	            .getAuthentication()
+	            .getName();
+
+
+	    return userRepository.findByEmail(email)
+	            .orElseThrow(() ->
+	                    new AccountException(
+	                        "User not found"
+	                    )
+	            );
+	}
+	
 	@Override
 	public AccountDto getAccountById(Long id) {
 		Account account = accRepo
@@ -90,6 +129,9 @@ public class AccountServiceImpl implements AccountService{
 	@Transactional
 	public AccountDto withdraw(Long id, double amount) {
 
+
+	    User loggedUser = getLoggedInUser();
+		
 	    Account account = accRepo
 	            .findById(id)
 	            .orElseThrow(() ->
@@ -98,6 +140,13 @@ public class AccountServiceImpl implements AccountService{
 	                    )
 	            );
 
+	    if(!account.getUser().getId()
+	            .equals(loggedUser.getId())){
+
+	        throw new AccountException(
+	                "You cannot withdraw from this account"
+	        );
+	    }
 
 	    if(account.getBalance() < amount) {
 	        throw new InsufficientBalanceException(

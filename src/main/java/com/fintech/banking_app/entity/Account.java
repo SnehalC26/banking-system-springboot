@@ -17,6 +17,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,7 +32,8 @@ private Long id;
 	
 	@OneToMany(
 	        mappedBy = "account",
-	        cascade = CascadeType.ALL
+	        cascade = CascadeType.ALL,
+	        orphanRemoval = true
 	)
 	private List<Transaction> transactions = new ArrayList<>();
 	
@@ -39,7 +42,9 @@ private Long id;
 private String accountHolderName;
 	 @PositiveOrZero(message = "Balance cannot be negative")
 private double balance;
-	 
+	 @ManyToOne
+	 @JoinColumn(name = "user_id")
+	 private User user;
 	 public Account(Long id, String accountHolderName, double balance) {
 
 		    this.id = id;

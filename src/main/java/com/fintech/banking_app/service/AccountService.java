@@ -8,8 +8,8 @@ import com.fintech.banking_app.dto.TransactionDto;
 import com.fintech.banking_app.entity.Transaction;
 
 public interface AccountService {
-AccountDto createAccount(AccountDto acccount);
-AccountDto getAccountById(Long id);
+	 AccountDto createAccount(AccountDto aDto, String email);
+	AccountDto getAccountById(Long id);
 AccountDto deposit(Long id, double amount);
 AccountDto withdraw(Long id, double amount);
 List<AccountDto> getAllAccounts();

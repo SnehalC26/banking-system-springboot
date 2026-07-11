@@ -12,7 +12,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.persistence.Id;
+import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.util.ArrayList;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 @Entity
 @Table(name="users")
 @Getter
@@ -39,6 +45,12 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
-
+    
+    @JsonIgnore
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL
+    )
+    private List<Account> accounts = new ArrayList<>();
 
 }

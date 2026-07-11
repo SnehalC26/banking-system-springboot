@@ -1,10 +1,11 @@
 package com.fintech.banking_app.controller;
 
 import java.util.List;
-import java.util.Map;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,13 +36,29 @@ public class AccountController {
 	
 
 	//add accont REST API
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@PostMapping
-	public ResponseEntity<AccountDto> addAccount(   @Valid  @RequestBody AccountDto aDto){
-		return new ResponseEntity<>(accountService.createAccount(aDto), HttpStatus.CREATED);
+	public ResponseEntity<AccountDto> addAccount(
+	        @Valid @RequestBody AccountDto aDto,
+	        Authentication authentication
+	){
+
+	    AccountDto account =
+	            accountService.createAccount(
+	                    aDto,
+	                    authentication.getName()
+	            );
+
+
+	    return new ResponseEntity<>(
+	            account,
+	            HttpStatus.CREATED
+	    );
 	}
 	
 	
 	//GET Account REST API
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@GetMapping("/{id}")
 	public ResponseEntity<AccountDto> getAccountById(@PathVariable Long id){
 		AccountDto accountDto = accountService.getAccountById(id);
@@ -50,6 +67,7 @@ public class AccountController {
 	
 	
 	// Deposit REST API
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@PutMapping("/{id}/deposit")
 	public ResponseEntity<AccountDto> deposit(
 	        @PathVariable Long id,
@@ -66,14 +84,23 @@ public class AccountController {
 	}
 	
 	//Withdraw REST API
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@PutMapping("/{id}/withdraw")
-	public ResponseEntity<AccountDto> withdraw(@PathVariable Long id, @RequestBody Map<String, Double> request)
-	{
-		double amount = request.get("amount");
-		AccountDto accountDto = accountService.withdraw(id, amount); 
-		return ResponseEntity.ok(accountDto);
+	public ResponseEntity<AccountDto> withdraw(
+	        @PathVariable Long id,
+	        @Valid @RequestBody TransactionRequest request) {
+
+
+	    AccountDto accountDto = accountService.withdraw(
+	            id,
+	            request.amount()
+	    );
+
+
+	    return ResponseEntity.ok(accountDto);
 	}
 	
+	@PreAuthorize("hasRole('ADMIN')")
 	@GetMapping
 	public ResponseEntity<List<AccountDto>> getAllAccounts(){
 		List<AccountDto> accounts = accountService.getAllAccounts();
@@ -81,12 +108,14 @@ public class AccountController {
 	}
 	
 	//Delete Account REST API
+	@PreAuthorize("hasRole('ADMIN')")
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteAccount(@PathVariable Long id){
 		accountService.deleteAccount(id);
 		return ResponseEntity.ok("Account is deleted successfully!!");
 	}
 
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@GetMapping("/{id}/transactions")
 	public ResponseEntity<List<TransactionDto>> getTransactions(
 	        @PathVariable Long id) {
@@ -97,7 +126,7 @@ public class AccountController {
 	    );
 	}
 
-	
+	@PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
 	@PostMapping("/transfer")
 	public ResponseEntity<String> transfer(
 	        @Valid @RequestBody TransferRequestDto request) {

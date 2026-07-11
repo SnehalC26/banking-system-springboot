@@ -41,6 +41,27 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 	
+	@ExceptionHandler(UnauthorizedActionException.class)
+	public ResponseEntity<ErrorDetails> handleUnauthorized(
+	        UnauthorizedActionException ex,
+	        WebRequest request
+	){
+
+	    ErrorDetails errorDetails =
+	            new ErrorDetails(
+	                    LocalDateTime.now(),
+	                    ex.getMessage(),
+	                    request.getDescription(false),
+	                    "ACCESS_DENIED"
+	            );
+
+
+	    return new ResponseEntity<>(
+	            errorDetails,
+	            HttpStatus.FORBIDDEN
+	    );
+	}
+	
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorDetails> handleValidationErrors(
 	        MethodArgumentNotValidException exception,
